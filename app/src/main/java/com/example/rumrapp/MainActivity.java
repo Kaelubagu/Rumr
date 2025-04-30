@@ -4,12 +4,9 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
-
 import androidx.activity.EdgeToEdge;
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -17,11 +14,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.ArrayList;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
+
 
 public class MainActivity extends AppCompatActivity {
 
@@ -30,7 +24,8 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
-        fetchMessagesAsync(1, new MessageCallback() {
+        int roomId = 2; //this will be changed based on what room user is in
+        fetchMessagesAsync(roomId, new MessageCallback() {
             @Override
             public void onMessagesReceived(ArrayList<Message> messages) {
                 // UI STUFF HERE, messages variable is ur info
@@ -39,7 +34,7 @@ public class MainActivity extends AppCompatActivity {
     }
     private ArrayList<Message> getMessages(int roomId) {
         try {
-            URL url = new URL("http://10.0.2.2:3000/getMessages/1");
+            URL url = new URL("http://10.0.2.2:3000/getMessages/" + String.valueOf(roomId));
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
 
@@ -64,7 +59,7 @@ public class MainActivity extends AppCompatActivity {
                 msg.content = obj.getString("Message");
                 messages.add(msg);
             }
-            System.out.println("messages: " + messages.toString());
+            System.out.println("messages: " + messages);
             return messages;
         } catch (Exception e) {
             e.printStackTrace();
