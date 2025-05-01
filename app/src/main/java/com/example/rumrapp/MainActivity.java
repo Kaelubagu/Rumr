@@ -40,6 +40,20 @@ public class MainActivity extends AppCompatActivity {
         enterBtn    = findViewById(R.id.button);
 
         enterBtn.setOnClickListener(v -> animateOut());
+        int roomId = 2; //this will be changed based on what room user is in
+        fetchMessagesAsync(roomId, new MessageCallback() {
+            @Override
+            public void onMessagesReceived(ArrayList<Message> messages) {
+                // UI STUFF HERE, messages variable is ur info
+            }
+        });
+        fetchRoomsAsync(new RoomCallback() {
+            @Override
+            public void onRoomsReceived(ArrayList<String> rooms) {
+                //UI stuff HERE, rooms variable is ur info
+                System.out.println(rooms.toString());
+            }
+        });
 
     }
     // animation funnnn!
@@ -90,22 +104,6 @@ public class MainActivity extends AppCompatActivity {
                 .setDuration(duration)
                 .withEndAction(() -> enterBtn.setVisibility(View.GONE))
                 .start();
-
-        int roomId = 2; //this will be changed based on what room user is in
-        fetchMessagesAsync(roomId, new MessageCallback() {
-            @Override
-            public void onMessagesReceived(ArrayList<Message> messages) {
-                // UI STUFF HERE, messages variable is ur info
-            }
-        });
-
-        fetchRoomsAsync(new RoomCallback() {
-            @Override
-            public void onRoomsReceived(ArrayList<String> rooms) {
-                //UI stuff HERE, rooms variable is ur info
-                System.out.println(rooms.toString());
-            }
-        });
     }
     private ArrayList<Message> getMessages(int roomId) {
         try {
