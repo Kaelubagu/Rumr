@@ -57,9 +57,15 @@ public class MainActivity extends AppCompatActivity {
                 System.out.println(rooms.toString());
             }
         });
-        System.out.println("trying to send message rn");
         sendMessageAsync(1, 69, "this is a new message yay!");
         createRoomAsync("THIS IS A NEW ROOM! FROM THE APP");
+        createUserAsync(new UserCallback() {
+            @Override
+            public void onUserCreate(int userId) {
+                //do whatever you want with user id
+                Log.d("USER_ID", String.valueOf(userId));
+            }
+        });
 
 
     }
@@ -177,6 +183,30 @@ public class MainActivity extends AppCompatActivity {
         }
         return null;   //mad with no return statement, null return probably bad
     }
+    private int createUser(){
+        try{
+            URL url = new URL("http://10.0.2.2:3000/createUser");
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            BufferedReader in = new BufferedReader(
+                    new InputStreamReader(conn.getInputStream()));
+            StringBuilder response = new StringBuilder();
+            String line;
+            while ((line = in.readLine()) != null) {
+                response.append(line);
+            }
+            in.close();
+            String userJson = response.toString();
+            Log.d("API_RESPONSE", userJson);
+
+            JSONObject user = new JSONObject(userJson);
+            int userId = user.getInt("UserId");
+            return userId;
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return 0;
+    }
     public interface MessageCallback {
         void onMessagesReceived(ArrayList<Message> messages);
     }
@@ -184,14 +214,9 @@ public class MainActivity extends AppCompatActivity {
         void onRoomsReceived(ArrayList<String> rooms);
     }
 
-    public interface SendMessageCallback {
-        void onMessageSent();
+    public interface UserCallback {
+        void onUserCreate(int userId);
     }
-    public interface CreateRoomCallback {
-        void onRoomCreate();
-    }
-
-
     private void fetchMessagesAsync(int roomId, MessageCallback callback) {
         ExecutorService executor = Executors.newSingleThreadExecutor();
         Handler handler = new Handler(Looper.getMainLooper());
@@ -264,6 +289,17 @@ public class MainActivity extends AppCompatActivity {
                 e.printStackTrace();
             }
         });
+    }
+    private void createUserAsync(UserCallback callback){
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Handler handler = new Handler(Looper.getMainLooper());
+        executor.execute(() -> {
+            int userId = createUser();
+            handler.post(() -> {
+                callback.onUserCreate(userId);
+            });
+        });
+
     }
 
 }
