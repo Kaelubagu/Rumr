@@ -13,8 +13,11 @@ import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLEncoder;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.ArrayList;
@@ -54,6 +57,16 @@ public class MainActivity extends AppCompatActivity {
                 System.out.println(rooms.toString());
             }
         });
+        sendMessageAsync(1, 69, "this is a new message yay!");
+        createRoomAsync("THIS IS A NEW ROOM! FROM THE APP");
+        createUserAsync(new UserCallback() {
+            @Override
+            public void onUserCreate(int userId) {
+                //do whatever you want with user id
+                Log.d("USER_ID", String.valueOf(userId));
+            }
+        });
+
 
     }
     // animation funnnn!
@@ -170,11 +183,39 @@ public class MainActivity extends AppCompatActivity {
         }
         return null;   //mad with no return statement, null return probably bad
     }
+    private int createUser(){
+        try{
+            URL url = new URL("http://10.0.2.2:3000/createUser");
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            BufferedReader in = new BufferedReader(
+                    new InputStreamReader(conn.getInputStream()));
+            StringBuilder response = new StringBuilder();
+            String line;
+            while ((line = in.readLine()) != null) {
+                response.append(line);
+            }
+            in.close();
+            String userJson = response.toString();
+            Log.d("API_RESPONSE", userJson);
+
+            JSONObject user = new JSONObject(userJson);
+            int userId = user.getInt("UserId");
+            return userId;
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return 0;
+    }
     public interface MessageCallback {
         void onMessagesReceived(ArrayList<Message> messages);
     }
     public interface RoomCallback{
         void onRoomsReceived(ArrayList<String> rooms);
+    }
+
+    public interface UserCallback {
+        void onUserCreate(int userId);
     }
     private void fetchMessagesAsync(int roomId, MessageCallback callback) {
         ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -184,6 +225,35 @@ public class MainActivity extends AppCompatActivity {
             handler.post(() -> {
                 callback.onMessagesReceived(messages);
             });
+        });
+    }
+
+    private void sendMessageAsync(int roomId, int senderId, String message) {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        executor.execute(() -> {
+            try {
+                URL url = new URL("http://10.0.2.2:3000/sendMessage");
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("POST");
+                conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+                conn.setDoOutput(true);
+
+                // Form-encoded string
+                String formData = "roomId=" + URLEncoder.encode(String.valueOf(roomId), "UTF-8") +
+                        "&senderId=" + URLEncoder.encode(String.valueOf(senderId), "UTF-8") +
+                        "&message=" + URLEncoder.encode(message, "UTF-8");
+
+                try (OutputStream os = conn.getOutputStream()) {
+                    byte[] input = formData.getBytes("utf-8");
+                    os.write(input, 0, input.length);
+                }
+                // Optional: force the connection to complete
+                int responseCode = conn.getResponseCode();
+                Log.d("SEND_MESSAGE", "Response code: " + responseCode);
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         });
     }
     private void fetchRoomsAsync(RoomCallback callback) {
@@ -197,6 +267,39 @@ public class MainActivity extends AppCompatActivity {
         });
 
     }
+    private void createRoomAsync(String roomName){
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        executor.execute(() -> {
+            try{
+                URL url = new URL("http://10.0.2.2:3000/createRoom");
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("POST");
+                conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+                conn.setDoOutput(true);
 
+                // Form-encoded string
+                String formData = "roomName=" + URLEncoder.encode(roomName, "UTF-8");
+                try (OutputStream os = conn.getOutputStream()) {
+                    byte[] input = formData.getBytes("utf-8");
+                    os.write(input, 0, input.length);
+                }
+                int responseCode = conn.getResponseCode();
+                Log.d("CREATE_ROOM", "Response code: " + responseCode);
+            }catch(Exception e){
+                e.printStackTrace();
+            }
+        });
+    }
+    private void createUserAsync(UserCallback callback){
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Handler handler = new Handler(Looper.getMainLooper());
+        executor.execute(() -> {
+            int userId = createUser();
+            handler.post(() -> {
+                callback.onUserCreate(userId);
+            });
+        });
+
+    }
 
 }
