@@ -1,12 +1,21 @@
 package com.example.rumrapp;
 
 import android.os.Bundle;
-
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Log;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.ArrayList;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 
 public class MainActivity extends AppCompatActivity {
 
@@ -15,10 +24,113 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
+        int roomId = 2; //this will be changed based on what room user is in
+        fetchMessagesAsync(roomId, new MessageCallback() {
+            @Override
+            public void onMessagesReceived(ArrayList<Message> messages) {
+                // UI STUFF HERE, messages variable is ur info
+            }
+        });
+
+        fetchRoomsAsync(new RoomCallback() {
+            @Override
+            public void onRoomsReceived(ArrayList<String> rooms) {
+                //UI stuff HERE, rooms variable is ur info
+                System.out.println(rooms.toString());
+            }
         });
     }
+    private ArrayList<Message> getMessages(int roomId) {
+        try {
+            URL url = new URL("http://10.0.2.2:3000/getMessages/" + String.valueOf(roomId));
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+
+            BufferedReader in = new BufferedReader(
+                    new InputStreamReader(conn.getInputStream()));
+            StringBuilder response = new StringBuilder();
+            String line;
+            while ((line = in.readLine()) != null) {
+                response.append(line);
+            }
+            in.close();
+
+            String messagesJson = response.toString();
+            Log.d("API_RESPONSE", messagesJson);
+            JSONArray jsonArray = new JSONArray(messagesJson);
+            ArrayList<Message> messages = new ArrayList<>();
+
+            for (int i = 0; i < jsonArray.length(); i++) {
+                JSONObject obj = jsonArray.getJSONObject(i);
+                Message msg = new Message();
+                msg.senderId = obj.getInt("Sender_ID");
+                msg.content = obj.getString("Message");
+                messages.add(msg);
+            }
+            System.out.println("messages: " + messages);
+            return messages;
+        } catch (Exception e) {
+            e.printStackTrace();
+
+        }
+        return null; //mad with no return statement, null return probably bad
+    }
+    private ArrayList<String> getRooms(){
+        try{
+            URL url = new URL("http://10.0.2.2:3000/getRooms");
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            BufferedReader in = new BufferedReader(
+                    new InputStreamReader(conn.getInputStream()));
+            StringBuilder response = new StringBuilder();
+            String line;
+            while ((line = in.readLine()) != null) {
+                response.append(line);
+            }
+            in.close();
+            String roomsJson = response.toString();
+            Log.d("API_RESPONSE", roomsJson);
+            JSONArray jsonArray = new JSONArray(roomsJson);
+            ArrayList<String> rooms = new ArrayList<>();
+            for (int i = 0; i < jsonArray.length(); i++) {
+                JSONObject obj = jsonArray.getJSONObject(i);
+                String room = obj.getString("Room_Name");
+                rooms.add(room);
+            }
+            return rooms;
+
+
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return null;   //mad with no return statement, null return probably bad
+    }
+    public interface MessageCallback {
+        void onMessagesReceived(ArrayList<Message> messages);
+    }
+    public interface RoomCallback{
+        void onRoomsReceived(ArrayList<String> rooms);
+    }
+    private void fetchMessagesAsync(int roomId, MessageCallback callback) {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Handler handler = new Handler(Looper.getMainLooper());
+        executor.execute(() -> {
+            ArrayList<Message> messages = getMessages(roomId);
+            handler.post(() -> {
+                callback.onMessagesReceived(messages);
+            });
+        });
+    }
+    private void fetchRoomsAsync(RoomCallback callback) {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Handler handler = new Handler(Looper.getMainLooper());
+        executor.execute(() -> {
+            ArrayList<String> rooms = getRooms();
+            handler.post(() -> {
+                callback.onRoomsReceived(rooms);
+            });
+        });
+    }
+
+
 }
