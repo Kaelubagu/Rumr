@@ -58,13 +58,16 @@ public class ChatroomActivity extends AppCompatActivity {
         chatroomChecker  = findViewById(R.id.chatroomNamePlate);
 
         messages = new ArrayList<>();
-        adapter  = new ChatAdapter(messages);
 
         Intent intent = getIntent();
         userId   = intent.getIntExtra("userId", 9999);
         roomId   = intent.getIntExtra("roomId", 1);
         roomName = intent.getStringExtra("roomName");
+
         chatroomChecker.setText(String.valueOf(roomName));
+
+        adapter  = new ChatAdapter(messages,userId);
+
 
         LinearLayoutManager lm = new LinearLayoutManager(this);
         lm.setStackFromEnd(true);
@@ -188,29 +191,61 @@ public class ChatroomActivity extends AppCompatActivity {
         void onMessagesReceived(ArrayList<Message> messages);
     }
 
-    private static class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.VH> {
-        private final ArrayList<Message> data;
-        ChatAdapter(ArrayList<Message> d) { data = d; }
-        @NonNull
-        @Override
-        public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_message, parent, false);
-            return new VH(v);
-        }
-        @Override
-        public void onBindViewHolder(@NonNull VH h, int i) {
-            h.message.setText(data.get(i).toString());
-        }
-        @Override
-        public int getItemCount() {
-            return data.size();
-        }
-        static class VH extends RecyclerView.ViewHolder {
-            TextView message;
-            VH(View itemView) {
-                super(itemView);
-                message = itemView.findViewById(R.id.textViewMessage);
-            }
+
+private static class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.VH> {
+    private final ArrayList<Message> data;
+    private final int userId;
+
+    // View type constants
+    private static final int VIEW_TYPE_SELF = 0;
+    private static final int VIEW_TYPE_OTHER = 1;
+
+    ChatAdapter(ArrayList<Message> d, int userId) {
+        this.data = d;
+        this.userId = userId;
+    }
+
+    @Override
+    public int getItemViewType(int position) {
+        return (data.get(position).senderId == userId)
+                ? VIEW_TYPE_SELF
+                : VIEW_TYPE_OTHER;
+    }
+
+    @NonNull
+    @Override
+    public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        int layout = (viewType == VIEW_TYPE_SELF)
+                ? R.layout.item_message_self
+                : R.layout.item_message_other;
+
+        View v = LayoutInflater.from(parent.getContext())
+                .inflate(layout, parent, false);
+        return new VH(v);
+    }
+
+    @Override
+    public void onBindViewHolder(@NonNull VH h, int i) {
+        Message msg = data.get(i);
+        h.message.setText(msg.content);
+        h.sender.setText("User " + msg.senderId);
+    }
+
+    @Override
+    public int getItemCount() {
+        return data.size();
+    }
+
+    static class VH extends RecyclerView.ViewHolder {
+        TextView message;
+        TextView sender;
+
+        VH(View itemView) {
+            super(itemView);
+            message = itemView.findViewById(R.id.textViewMessage);
+            sender = itemView.findViewById(R.id.textViewSender);
         }
     }
+}
+
 }
