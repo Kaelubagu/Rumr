@@ -41,6 +41,8 @@ public class ChatroomActivity extends AppCompatActivity {
     private String roomName;
     private int userId;
 
+    private TextView chatroomChecker;
+
     private Handler fetchHandler;
     private Runnable fetchRunnable;
     private static final long FETCH_INTERVAL_MS = 1000;
@@ -53,6 +55,7 @@ public class ChatroomActivity extends AppCompatActivity {
         recyclerView = findViewById(R.id.recyclerViewMessages);
         editText     = findViewById(R.id.editTextMessage);
         sendButton   = findViewById(R.id.buttonSend);
+        chatroomChecker  = findViewById(R.id.chatroomNamePlate);
 
         messages = new ArrayList<>();
         adapter  = new ChatAdapter(messages);
@@ -61,6 +64,7 @@ public class ChatroomActivity extends AppCompatActivity {
         userId   = intent.getIntExtra("userId", 9999);
         roomId   = intent.getIntExtra("roomId", 1);
         roomName = intent.getStringExtra("roomName");
+        chatroomChecker.setText(String.valueOf(roomName));
 
         LinearLayoutManager lm = new LinearLayoutManager(this);
         lm.setStackFromEnd(true);
