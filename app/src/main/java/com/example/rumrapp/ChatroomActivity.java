@@ -243,7 +243,9 @@ private static class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.VH> {
 
     @Override
     public void onBindViewHolder(@NonNull VH h, int i) {
-        h.message.setText(data.get(i).content);
+        Message msg = data.get(i);
+        h.message.setText(msg.content);
+        h.sender.setText("User " + msg.senderId);
     }
 
     @Override
@@ -253,10 +255,12 @@ private static class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.VH> {
 
     static class VH extends RecyclerView.ViewHolder {
         TextView message;
+        TextView sender;
 
         VH(View itemView) {
             super(itemView);
             message = itemView.findViewById(R.id.textViewMessage);
+            sender = itemView.findViewById(R.id.textViewSender);
         }
     }
 }

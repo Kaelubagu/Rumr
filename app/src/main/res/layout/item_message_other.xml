@@ -1,10 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:padding="8dp"
-    android:gravity="start">
+    android:gravity="start"
+    android:orientation="vertical"
+    android:padding="8dp">
 
+    <!-- Sender label above the bubble -->
+    <TextView
+        android:id="@+id/textViewSender"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="User 1001"
+        android:textSize="12sp"
+        android:textColor="#888888"
+        android:layout_marginBottom="2dp"
+        android:gravity="start" />
+
+    <!-- Message bubble -->
     <TextView
         android:id="@+id/textViewMessage"
         android:layout_width="wrap_content"
