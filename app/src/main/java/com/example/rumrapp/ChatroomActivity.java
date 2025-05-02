@@ -1,6 +1,8 @@
 package com.example.rumrapp;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,8 +16,14 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class ChatroomActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
@@ -23,6 +31,10 @@ public class ChatroomActivity extends AppCompatActivity {
     private ImageButton sendButton;
     private List<String> messages;
     private ChatAdapter adapter;
+
+    private int roomId;
+
+    private int userId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,6 +47,11 @@ public class ChatroomActivity extends AppCompatActivity {
 
         messages = new ArrayList<>();
         adapter  = new ChatAdapter(messages);
+        //getting user and room info
+        Intent intent = getIntent();
+        userId = intent.getIntExtra("userId", 9999);
+        roomId = intent.getIntExtra("roomId", 1);
+
 
         // stacks from the bottom
         LinearLayoutManager lm = new LinearLayoutManager(this);
@@ -57,6 +74,8 @@ public class ChatroomActivity extends AppCompatActivity {
 
             recyclerView.scrollToPosition(messages.size() - 1);
             editText.setText("");                // clear input
+            Log.d("SEND_MESSAGE", "roomId: " + roomId + " senderId: " + userId + " text: " + text);
+            sendMessageAsync(roomId, userId, text);
         });
 
         // (Optionally handle IME “Send” on keyboard)
@@ -93,5 +112,33 @@ public class ChatroomActivity extends AppCompatActivity {
                 message = itemView.findViewById(R.id.textViewMessage);
             }
         }
+    }
+    private void sendMessageAsync(int roomId, int senderId, String message) {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        executor.execute(() -> {
+            try {
+                URL url = new URL("http://10.0.2.2:3000/sendMessage");
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("POST");
+                conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+                conn.setDoOutput(true);
+
+                // Form-encoded string
+                String formData = "roomId=" + URLEncoder.encode(String.valueOf(roomId), "UTF-8") +
+                        "&senderId=" + URLEncoder.encode(String.valueOf(senderId), "UTF-8") +
+                        "&message=" + URLEncoder.encode(message, "UTF-8");
+
+                try (OutputStream os = conn.getOutputStream()) {
+                    byte[] input = formData.getBytes("utf-8");
+                    os.write(input, 0, input.length);
+                }
+                // Optional: force the connection to complete
+                int responseCode = conn.getResponseCode();
+                Log.d("SEND_MESSAGE", "Response code: " + responseCode);
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
     }
 }
