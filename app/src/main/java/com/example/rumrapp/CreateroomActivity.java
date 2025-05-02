@@ -2,6 +2,7 @@ package com.example.rumrapp;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.widget.Toast;
 import android.os.Handler;
 import android.os.Looper;
 import android.widget.ArrayAdapter;
@@ -155,18 +156,31 @@ public class CreateroomActivity extends AppCompatActivity {
                 );
                 conn.setDoOutput(true);
 
-                String formData = "roomName=" +
-                        URLEncoder.encode(roomName, "UTF-8");
+                String formData = "roomName=" + URLEncoder.encode(roomName, "UTF-8");
                 try (OutputStream os = conn.getOutputStream()) {
                     os.write(formData.getBytes("utf-8"));
                 }
-                conn.getResponseCode(); // fire & forget
+
+                int responseCode = conn.getResponseCode();
+                Log.d("CREATE_ROOM", "Response code: " + responseCode);
+
+                // Show toast on main thread if creation succeeded (e.g., HTTP 200 or 201)
+                if (responseCode == HttpURLConnection.HTTP_OK || responseCode == HttpURLConnection.HTTP_CREATED) {
+                    new Handler(Looper.getMainLooper()).post(() ->
+                            Toast.makeText(CreateroomActivity.this, "Room created!", Toast.LENGTH_SHORT).show()
+                    );
+                }
 
             } catch (Exception e) {
                 e.printStackTrace();
+                // Optional: show error toast on failure
+                new Handler(Looper.getMainLooper()).post(() ->
+                        Toast.makeText(CreateroomActivity.this, "Failed to create room", Toast.LENGTH_SHORT).show()
+                );
             }
         });
     }
+
 
     /** Simple callback interface */
     public interface RoomCallback {
