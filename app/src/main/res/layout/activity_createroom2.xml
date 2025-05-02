@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#f7f7f7"
+    android:background="#E4E4E4"
     android:padding="16dp">
 
     <!-- Packed vertical chain centered -->
@@ -13,15 +12,15 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:text="Choose a room:"
+        android:textColor="#333333"
         android:textSize="20sp"
         android:textStyle="bold"
-        android:textColor="#333333"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toTopOf="@id/spinnerRooms"
-        app:layout_constraintVertical_chainStyle="packed"
-        app:layout_constraintVertical_bias="0.5" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.5"
+        app:layout_constraintVertical_chainStyle="packed" />
 
     <Spinner
         android:id="@+id/spinnerRooms"
@@ -53,17 +52,17 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
+        android:fontFamily="sans-serif-medium"
         android:padding="12dp"
         android:text="Join Room"
-        app:backgroundTint="#C70139"
         android:textColor="@android:color/white"
-        android:fontFamily="sans-serif-medium"
-        app:layout_constraintStart_toStartOf="parent"
+        app:backgroundTint="#C70139"
+        app:layout_constraintBottom_toTopOf="@id/divider"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/spinnerRooms"
-        app:layout_constraintBottom_toTopOf="@id/divider" app:strokeColor="#FF3971"
-        app:strokeWidth="2dp"
-        />
+        app:strokeColor="#FF3971"
+        app:strokeWidth="2dp" />
 
     <View
         android:id="@+id/divider"
@@ -83,27 +82,27 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:text="Create new room:"
+        android:textColor="#333333"
         android:textSize="20sp"
         android:textStyle="bold"
-        android:textColor="#333333"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/editTextNewRoom"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/divider"
-        app:layout_constraintBottom_toTopOf="@id/editTextNewRoom" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/divider" />
 
     <EditText
         android:id="@+id/editTextNewRoom"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        android:hint="Room name"
-        android:padding="12dp"
         android:backgroundTint="#cccccc"
         android:fontFamily="sans-serif"
-        app:layout_constraintStart_toStartOf="parent"
+        android:hint="Room name"
+        android:padding="12dp"
+        app:layout_constraintBottom_toTopOf="@id/buttonCreateRoom"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_new_room"
-        app:layout_constraintBottom_toTopOf="@id/buttonCreateRoom" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_new_room" />
 
     <Button
         android:id="@+id/buttonCreateRoom"
@@ -111,18 +110,17 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
-        app:backgroundTint="#C70139"
         android:fontFamily="sans-serif-medium"
         android:padding="12dp"
         android:text="Create Room"
         android:textColor="@android:color/white"
         android:textColorLink="#FFFFFF"
+        app:backgroundTint="#C70139"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/editTextNewRoom"
         app:strokeColor="#FF3971"
-        app:strokeWidth="2dp"
-        />
+        app:strokeWidth="2dp" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
