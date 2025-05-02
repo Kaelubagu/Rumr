@@ -43,6 +43,11 @@ public class ChatroomActivity extends AppCompatActivity {
 
         recyclerView.setAdapter(adapter);
 
+
+        //make a field list with all the chatrooms inside of it.
+        //when you select one of the chatroom fields the data inside of recyclerViewMessages
+
+
         // send button
         sendButton.setOnClickListener(v -> {
             String text = editText.getText().toString().trim();

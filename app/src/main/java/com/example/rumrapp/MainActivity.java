@@ -30,7 +30,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView welcomeTxt, userIdTxt, boxTxt;
     private ImageView logoImg;
     private Button enterBtn;
-
+    private int userId;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -61,9 +61,11 @@ public class MainActivity extends AppCompatActivity {
         createRoomAsync("THIS IS A NEW ROOM! FROM THE APP");
         createUserAsync(new UserCallback() {
             @Override
-            public void onUserCreate(int userId) {
+            public void onUserCreate(int userIdTmp) {
                 //do whatever you want with user id
-                Log.d("USER_ID", String.valueOf(userId));
+                Log.d("USER_ID", String.valueOf(userIdTmp));
+                userIdTxt.setText(String.valueOf(userIdTmp));
+                userId = userIdTmp;
             }
         });
 
@@ -185,7 +187,8 @@ public class MainActivity extends AppCompatActivity {
     }
     private int createUser(){
         try{
-            URL url = new URL("http://10.0.2.2:3000/createUser");
+            Log.d("URL", getString(R.string.url_root) + "/createUser");
+            URL url = new URL(getString(R.string.url_root) + "/createUser");
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
             BufferedReader in = new BufferedReader(
