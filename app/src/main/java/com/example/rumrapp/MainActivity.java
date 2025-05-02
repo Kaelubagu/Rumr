@@ -107,7 +107,7 @@ public class MainActivity extends AppCompatActivity {
                     logoImg.setVisibility(View.GONE);
                     boxTxt.setVisibility(View.GONE);
 
-                    Intent go = new Intent(MainActivity.this, ChatroomActivity.class);
+                    Intent go = new Intent(MainActivity.this, CreateroomActivity.class);
                     startActivity(go);
                     finish();
                 })
@@ -157,7 +157,7 @@ public class MainActivity extends AppCompatActivity {
     }
     private ArrayList<String> getRooms(){
         try{
-            URL url = new URL(getString(R.string.url_root) + "/getRooms");
+            URL url = new URL(getString(R.string.url_root) +"/getRooms");
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
             BufferedReader in = new BufferedReader(
@@ -247,7 +247,7 @@ public class MainActivity extends AppCompatActivity {
         ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.execute(() -> {
             try{
-                URL url = new URL(getString(R.string.url_root) + "/createRoom");
+                URL url = new URL(getString(R.string.url_root) +"/createRoom");
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("POST");
                 conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
