@@ -79,10 +79,23 @@ public class CreateroomActivity extends AppCompatActivity {
         // 4) create & refresh
         createBtn.setOnClickListener(v -> {
             String roomName = newRoomEdit.getText().toString().trim();
-            if (!roomName.isEmpty()) {
+
+            if (roomName.isEmpty()) return;
+
+            // Check for duplicate name (case-insensitive)
+            boolean exists = false;
+            for (Room room : roomsList) {
+                if (room.getName().equalsIgnoreCase(roomName)) {
+                    exists = true;
+                    break;
+                }
+            }
+
+            if (exists) {
+                Toast.makeText(this, "Room name already exists!", Toast.LENGTH_SHORT).show();
+            } else {
                 createRoomAsync(roomName);
                 newRoomEdit.setText("");
-                // small delay to let server register new room, then reload list
                 new Handler(Looper.getMainLooper())
                         .postDelayed(this::loadRooms, 500);
             }

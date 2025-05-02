@@ -85,10 +85,16 @@ public class ChatroomActivity extends AppCompatActivity {
                     @Override
                     public void onMessagesReceived(ArrayList<Message> serverMessages) {
                         runOnUiThread(() -> {
+                            boolean isAtBottom = !recyclerView.canScrollVertically(1);
+
                             messages.clear();
                             messages.addAll(serverMessages);
                             adapter.notifyDataSetChanged();
-                            recyclerView.scrollToPosition(messages.size() - 1);
+
+                            if (isAtBottom) {
+                                recyclerView.scrollToPosition(messages.size() - 1);
+                            }
+
                         });
                     }
                 });
