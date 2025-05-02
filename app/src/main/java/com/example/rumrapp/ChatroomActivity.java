@@ -34,6 +34,8 @@ public class ChatroomActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
     private EditText editText;
     private ImageButton sendButton;
+
+    private ImageButton backButton;
     private ArrayList<Message> messages;
     private ChatAdapter adapter;
 
@@ -55,6 +57,7 @@ public class ChatroomActivity extends AppCompatActivity {
         recyclerView = findViewById(R.id.recyclerViewMessages);
         editText     = findViewById(R.id.editTextMessage);
         sendButton   = findViewById(R.id.buttonSend);
+        backButton = findViewById(R.id.backArrow);
         chatroomChecker  = findViewById(R.id.chatroomNamePlate);
 
         messages = new ArrayList<>();
@@ -94,6 +97,10 @@ public class ChatroomActivity extends AppCompatActivity {
         };
         fetchHandler.postDelayed(fetchRunnable, FETCH_INTERVAL_MS);
 
+
+        backButton.setOnClickListener(v -> {
+            finish(); // go back to previous activity
+        });
         sendButton.setOnClickListener(v -> {
             String text = editText.getText().toString().trim();
             if (text.isEmpty()) return;

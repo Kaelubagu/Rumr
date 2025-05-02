@@ -46,7 +46,6 @@ public class MainActivity extends AppCompatActivity {
         int roomId = 2; //this will be changed based on what room user is in
 
 
-        createRoomAsync("THIS IS A NEW ROOM! FROM THE APP");
         createUserAsync(new UserCallback() {
             @Override
             public void onUserCreate(int userIdTmp) {
@@ -176,40 +175,7 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-    private void fetchRoomsAsync(RoomCallback callback) {
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        Handler handler = new Handler(Looper.getMainLooper());
-        executor.execute(() -> {
-            ArrayList<String> rooms = getRooms();
-            handler.post(() -> {
-                callback.onRoomsReceived(rooms);
-            });
-        });
 
-    }
-    private void createRoomAsync(String roomName){
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        executor.execute(() -> {
-            try{
-                URL url = new URL(getString(R.string.url_root) +"/createRoom");
-                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                conn.setRequestMethod("POST");
-                conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-                conn.setDoOutput(true);
-
-                // Form-encoded string
-                String formData = "roomName=" + URLEncoder.encode(roomName, "UTF-8");
-                try (OutputStream os = conn.getOutputStream()) {
-                    byte[] input = formData.getBytes("utf-8");
-                    os.write(input, 0, input.length);
-                }
-                int responseCode = conn.getResponseCode();
-                Log.d("CREATE_ROOM", "Response code: " + responseCode);
-            }catch(Exception e){
-                e.printStackTrace();
-            }
-        });
-    }
     private void createUserAsync(UserCallback callback){
         ExecutorService executor = Executors.newSingleThreadExecutor();
         Handler handler = new Handler(Looper.getMainLooper());
