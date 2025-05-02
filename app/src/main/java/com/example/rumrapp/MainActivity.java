@@ -122,7 +122,7 @@ public class MainActivity extends AppCompatActivity {
     }
     private ArrayList<Message> getMessages(int roomId) {
         try {
-            URL url = new URL(getString(R.string.url_root) + String.valueOf(roomId));
+            URL url = new URL("http://10.0.2.2:3000/getMessages/" + String.valueOf(roomId));
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
 
@@ -157,7 +157,7 @@ public class MainActivity extends AppCompatActivity {
     }
     private ArrayList<String> getRooms(){
         try{
-            URL url = new URL(getString(R.string.url_root) + "/getRooms");
+            URL url = new URL("http://10.0.2.2:3000/getRooms");
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
             BufferedReader in = new BufferedReader(
@@ -274,7 +274,7 @@ public class MainActivity extends AppCompatActivity {
         ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.execute(() -> {
             try{
-                URL url = new URL(getString(R.string.url_root) + "/createRoom");
+                URL url = new URL("http://10.0.2.2:3000/createRoom");
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("POST");
                 conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
