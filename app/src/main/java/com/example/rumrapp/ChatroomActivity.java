@@ -41,6 +41,8 @@ public class ChatroomActivity extends AppCompatActivity {
     private String roomName;
     private int userId;
 
+    private TextView chatroomChecker;
+
     private Handler fetchHandler;
     private Runnable fetchRunnable;
     private static final long FETCH_INTERVAL_MS = 1000;
@@ -53,6 +55,7 @@ public class ChatroomActivity extends AppCompatActivity {
         recyclerView = findViewById(R.id.recyclerViewMessages);
         editText     = findViewById(R.id.editTextMessage);
         sendButton   = findViewById(R.id.buttonSend);
+        chatroomChecker  = findViewById(R.id.chatroomNamePlate);
 
         messages = new ArrayList<>();
 
@@ -60,7 +63,11 @@ public class ChatroomActivity extends AppCompatActivity {
         userId   = intent.getIntExtra("userId", 9999);
         roomId   = intent.getIntExtra("roomId", 1);
         roomName = intent.getStringExtra("roomName");
+
+        chatroomChecker.setText(String.valueOf(roomName));
+
         adapter  = new ChatAdapter(messages,userId);
+
 
         LinearLayoutManager lm = new LinearLayoutManager(this);
         lm.setStackFromEnd(true);
@@ -184,31 +191,7 @@ public class ChatroomActivity extends AppCompatActivity {
         void onMessagesReceived(ArrayList<Message> messages);
     }
 
-//    private static class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.VH> {
-//        private final ArrayList<Message> data;
-//        ChatAdapter(ArrayList<Message> d) { data = d; }
-//        @NonNull
-//        @Override
-//        public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-//            View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_message, parent, false);
-//            return new VH(v);
-//        }
-//        @Override
-//        public void onBindViewHolder(@NonNull VH h, int i) {
-//            h.message.setText(data.get(i).toString());
-//        }
-//        @Override
-//        public int getItemCount() {
-//            return data.size();
-//        }
-//        static class VH extends RecyclerView.ViewHolder {
-//            TextView message;
-//            VH(View itemView) {
-//                super(itemView);
-//                message = itemView.findViewById(R.id.textViewMessage);
-//            }
-//        }
-//    }
+
 private static class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.VH> {
     private final ArrayList<Message> data;
     private final int userId;
