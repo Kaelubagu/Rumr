@@ -2,6 +2,8 @@ package com.example.rumrapp;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -16,6 +18,11 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -29,7 +36,7 @@ public class ChatroomActivity extends AppCompatActivity {
     private RecyclerView recyclerView;
     private EditText editText;
     private ImageButton sendButton;
-    private List<String> messages;
+    private ArrayList<Message> messages;
     private ChatAdapter adapter;
 
     private int roomId;
@@ -70,13 +77,22 @@ public class ChatroomActivity extends AppCompatActivity {
         sendButton.setOnClickListener(v -> {
             String text = editText.getText().toString().trim();
             if (text.isEmpty()) return;
-            messages.add(text);
-            adapter.notifyItemInserted(messages.size() - 1);
 
-            recyclerView.scrollToPosition(messages.size() - 1);
             editText.setText("");                // clear input
             Log.d("SEND_MESSAGE", "roomId: " + roomId + " senderId: " + userId + " text: " + text);
+
             sendMessageAsync(roomId, userId, text);
+                fetchMessagesAsync(roomId, new MessageCallback() {
+                    @Override
+                    public void onMessagesReceived(ArrayList<Message> serverMessages) {
+                        runOnUiThread(() -> {
+                            messages.clear();
+                            messages.addAll(serverMessages);
+                            adapter.notifyDataSetChanged();
+                            recyclerView.scrollToPosition(messages.size() - 1);
+                        });
+                    }
+                });
         });
 
         // (Optionally handle IME “Send” on keyboard)
@@ -91,8 +107,8 @@ public class ChatroomActivity extends AppCompatActivity {
 
     // simple adapter for a list of strings (chatgpt)
     private static class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.VH> {
-        private final List<String> data;
-        ChatAdapter(List<String> d) { data = d; }
+        private final ArrayList<Message> data;
+        ChatAdapter(ArrayList<Message> d) { data = d; }
         @NonNull
         @Override
         public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -102,7 +118,7 @@ public class ChatroomActivity extends AppCompatActivity {
         }
         @Override
         public void onBindViewHolder(@NonNull VH h, int i) {
-            h.message.setText(data.get(i));
+            h.message.setText(data.get(i).toString());
         }
         @Override
         public int getItemCount() { return data.size(); }
@@ -114,6 +130,7 @@ public class ChatroomActivity extends AppCompatActivity {
             }
         }
     }
+
     private void sendMessageAsync(int roomId, int senderId, String message) {
         ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.execute(() -> {
@@ -142,4 +159,54 @@ public class ChatroomActivity extends AppCompatActivity {
             }
         });
     }
+    private ArrayList<Message> getMessages(int roomId) {
+        Log.d("GetMessages was called","");
+        try {
+            URL url = new URL(getString(R.string.url_root) + "/getMessages/"+ String.valueOf(roomId));
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+
+            BufferedReader in = new BufferedReader(
+                    new InputStreamReader(conn.getInputStream()));
+            StringBuilder response = new StringBuilder();
+            String line;
+            while ((line = in.readLine()) != null) {
+                response.append(line);
+            }
+            in.close();
+
+            String messagesJson = response.toString();
+            Log.d("API_RESPONSE in getMessages", messagesJson);
+            JSONArray jsonArray = new JSONArray(messagesJson);
+            ArrayList<Message> messages = new ArrayList<>();
+
+            for (int i = 0; i < jsonArray.length(); i++) {
+                JSONObject obj = jsonArray.getJSONObject(i);
+                Message msg = new Message();
+                msg.senderId = obj.getInt("Sender_ID");
+                msg.content = obj.getString("Message");
+                messages.add(msg);
+            }
+            System.out.println("messages: " + messages);
+            return messages;
+        } catch (Exception e) {
+            e.printStackTrace();
+
+        }
+        return null; //mad with no return statement, null return probably bad
+    }
+    private void fetchMessagesAsync(int roomId, MessageCallback callback) {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Handler handler = new Handler(Looper.getMainLooper());
+        executor.execute(() -> {
+            ArrayList<Message> messages = getMessages(roomId);
+            handler.post(() -> {
+                callback.onMessagesReceived(messages);
+            });
+        });
+    }
+    public interface MessageCallback {
+        void onMessagesReceived(ArrayList<Message> messages);
+    }
+
 }
