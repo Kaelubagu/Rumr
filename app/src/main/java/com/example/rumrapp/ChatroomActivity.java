@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -28,7 +27,6 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -43,6 +41,10 @@ public class ChatroomActivity extends AppCompatActivity {
     private String roomName;
     private int userId;
 
+    private Handler fetchHandler;
+    private Runnable fetchRunnable;
+    private static final long FETCH_INTERVAL_MS = 1000;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -54,34 +56,21 @@ public class ChatroomActivity extends AppCompatActivity {
 
         messages = new ArrayList<>();
         adapter  = new ChatAdapter(messages);
-        //getting user and room info
+
         Intent intent = getIntent();
-        userId = intent.getIntExtra("userId", 9999);
-        roomId = intent.getIntExtra("roomId", 1);
-        roomName = intent.getStringExtra(("roomName"));
+        userId   = intent.getIntExtra("userId", 9999);
+        roomId   = intent.getIntExtra("roomId", 1);
+        roomName = intent.getStringExtra("roomName");
 
-
-        // stacks from the bottom
         LinearLayoutManager lm = new LinearLayoutManager(this);
         lm.setStackFromEnd(true);
         recyclerView.setLayoutManager(lm);
-
         recyclerView.setAdapter(adapter);
 
-
-        //make a field list with all the chatrooms inside of it.
-        //when you select one of the chatroom fields the data inside of recyclerViewMessages
-
-
-        // send button
-        sendButton.setOnClickListener(v -> {
-            String text = editText.getText().toString().trim();
-            if (text.isEmpty()) return;
-
-            editText.setText("");                // clear input
-            Log.d("SEND_MESSAGE", "roomId: " + roomId + " senderId: " + userId + " text: " + text);
-
-            sendMessageAsync(roomId, userId, text);
+        fetchHandler = new Handler(Looper.getMainLooper());
+        fetchRunnable = new Runnable() {
+            @Override
+            public void run() {
                 fetchMessagesAsync(roomId, new MessageCallback() {
                     @Override
                     public void onMessagesReceived(ArrayList<Message> serverMessages) {
@@ -93,9 +82,29 @@ public class ChatroomActivity extends AppCompatActivity {
                         });
                     }
                 });
+                fetchHandler.postDelayed(this, FETCH_INTERVAL_MS);
+            }
+        };
+        fetchHandler.postDelayed(fetchRunnable, FETCH_INTERVAL_MS);
+
+        sendButton.setOnClickListener(v -> {
+            String text = editText.getText().toString().trim();
+            if (text.isEmpty()) return;
+            editText.setText("");
+            sendMessageAsync(roomId, userId, text);
+            fetchMessagesAsync(roomId, new MessageCallback() {
+                @Override
+                public void onMessagesReceived(ArrayList<Message> serverMessages) {
+                    runOnUiThread(() -> {
+                        messages.clear();
+                        messages.addAll(serverMessages);
+                        adapter.notifyDataSetChanged();
+                        recyclerView.scrollToPosition(messages.size() - 1);
+                    });
+                }
+            });
         });
 
-        // (Optionally handle IME “Send” on keyboard)
         editText.setOnEditorActionListener((view, actionId, event) -> {
             if (actionId == EditorInfo.IME_ACTION_SEND) {
                 sendButton.performClick();
@@ -105,15 +114,83 @@ public class ChatroomActivity extends AppCompatActivity {
         });
     }
 
-    // simple adapter for a list of strings (chatgpt)
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        fetchHandler.removeCallbacks(fetchRunnable);
+    }
+
+    private void sendMessageAsync(int roomId, int senderId, String message) {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        executor.execute(() -> {
+            try {
+                URL url = new URL(getString(R.string.url_root) + "/sendMessage");
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("POST");
+                conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+                conn.setDoOutput(true);
+                String formData = "roomId=" + URLEncoder.encode(String.valueOf(roomId), "UTF-8") +
+                        "&senderId=" + URLEncoder.encode(String.valueOf(senderId), "UTF-8") +
+                        "&message="  + URLEncoder.encode(message, "UTF-8");
+                try (OutputStream os = conn.getOutputStream()) {
+                    byte[] input = formData.getBytes("utf-8");
+                    os.write(input, 0, input.length);
+                }
+                conn.getResponseCode();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    private ArrayList<Message> getMessages(int roomId) {
+        try {
+            URL url = new URL(getString(R.string.url_root) + "/getMessages/" + roomId);
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+            StringBuilder response = new StringBuilder();
+            String line;
+            while ((line = in.readLine()) != null) {
+                response.append(line);
+            }
+            in.close();
+            JSONArray jsonArray = new JSONArray(response.toString());
+            ArrayList<Message> messages = new ArrayList<>();
+            for (int i = 0; i < jsonArray.length(); i++) {
+                JSONObject obj = jsonArray.getJSONObject(i);
+                Message msg = new Message();
+                msg.senderId = obj.getInt("Sender_ID");
+                msg.content  = obj.getString("Message");
+                messages.add(msg);
+            }
+            return messages;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private void fetchMessagesAsync(int roomId, MessageCallback callback) {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        Handler handler = new Handler(Looper.getMainLooper());
+        executor.execute(() -> {
+            ArrayList<Message> result = getMessages(roomId);
+            handler.post(() -> callback.onMessagesReceived(result));
+        });
+    }
+
+    public interface MessageCallback {
+        void onMessagesReceived(ArrayList<Message> messages);
+    }
+
     private static class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.VH> {
         private final ArrayList<Message> data;
         ChatAdapter(ArrayList<Message> d) { data = d; }
         @NonNull
         @Override
         public VH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            View v = LayoutInflater.from(parent.getContext())
-                    .inflate(R.layout.item_message, parent, false);
+            View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_message, parent, false);
             return new VH(v);
         }
         @Override
@@ -121,7 +198,9 @@ public class ChatroomActivity extends AppCompatActivity {
             h.message.setText(data.get(i).toString());
         }
         @Override
-        public int getItemCount() { return data.size(); }
+        public int getItemCount() {
+            return data.size();
+        }
         static class VH extends RecyclerView.ViewHolder {
             TextView message;
             VH(View itemView) {
@@ -130,83 +209,4 @@ public class ChatroomActivity extends AppCompatActivity {
             }
         }
     }
-
-    private void sendMessageAsync(int roomId, int senderId, String message) {
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        executor.execute(() -> {
-            try {
-                URL url = new URL(getString(R.string.url_root)+"/sendMessage");
-                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-                conn.setRequestMethod("POST");
-                conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-                conn.setDoOutput(true);
-
-                // Form-encoded string
-                String formData = "roomId=" + URLEncoder.encode(String.valueOf(roomId), "UTF-8") +
-                        "&senderId=" + URLEncoder.encode(String.valueOf(senderId), "UTF-8") +
-                        "&message=" + URLEncoder.encode(message, "UTF-8");
-
-                try (OutputStream os = conn.getOutputStream()) {
-                    byte[] input = formData.getBytes("utf-8");
-                    os.write(input, 0, input.length);
-                }
-                // Optional: force the connection to complete
-                int responseCode = conn.getResponseCode();
-                Log.d("SEND_MESSAGE", "Response code: " + responseCode);
-
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        });
-    }
-    private ArrayList<Message> getMessages(int roomId) {
-        Log.d("GetMessages was called","");
-        try {
-            URL url = new URL(getString(R.string.url_root) + "/getMessages/"+ String.valueOf(roomId));
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("GET");
-
-            BufferedReader in = new BufferedReader(
-                    new InputStreamReader(conn.getInputStream()));
-            StringBuilder response = new StringBuilder();
-            String line;
-            while ((line = in.readLine()) != null) {
-                response.append(line);
-            }
-            in.close();
-
-            String messagesJson = response.toString();
-            Log.d("API_RESPONSE in getMessages", messagesJson);
-            JSONArray jsonArray = new JSONArray(messagesJson);
-            ArrayList<Message> messages = new ArrayList<>();
-
-            for (int i = 0; i < jsonArray.length(); i++) {
-                JSONObject obj = jsonArray.getJSONObject(i);
-                Message msg = new Message();
-                msg.senderId = obj.getInt("Sender_ID");
-                msg.content = obj.getString("Message");
-                messages.add(msg);
-            }
-            System.out.println("messages: " + messages);
-            return messages;
-        } catch (Exception e) {
-            e.printStackTrace();
-
-        }
-        return null; //mad with no return statement, null return probably bad
-    }
-    private void fetchMessagesAsync(int roomId, MessageCallback callback) {
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        Handler handler = new Handler(Looper.getMainLooper());
-        executor.execute(() -> {
-            ArrayList<Message> messages = getMessages(roomId);
-            handler.post(() -> {
-                callback.onMessagesReceived(messages);
-            });
-        });
-    }
-    public interface MessageCallback {
-        void onMessagesReceived(ArrayList<Message> messages);
-    }
-
 }
