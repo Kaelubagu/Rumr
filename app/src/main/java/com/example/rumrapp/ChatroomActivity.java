@@ -33,7 +33,7 @@ public class ChatroomActivity extends AppCompatActivity {
     private ChatAdapter adapter;
 
     private int roomId;
-
+    private String roomName;
     private int userId;
 
     @Override
@@ -51,6 +51,7 @@ public class ChatroomActivity extends AppCompatActivity {
         Intent intent = getIntent();
         userId = intent.getIntExtra("userId", 9999);
         roomId = intent.getIntExtra("roomId", 1);
+        roomName = intent.getStringExtra(("roomName"));
 
 
         // stacks from the bottom
@@ -117,7 +118,7 @@ public class ChatroomActivity extends AppCompatActivity {
         ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.execute(() -> {
             try {
-                URL url = new URL("http://10.0.2.2:3000/sendMessage");
+                URL url = new URL(getString(R.string.url_root)+"/sendMessage");
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("POST");
                 conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");

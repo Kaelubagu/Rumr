@@ -108,6 +108,7 @@ public class MainActivity extends AppCompatActivity {
                     boxTxt.setVisibility(View.GONE);
 
                     Intent go = new Intent(MainActivity.this, CreateroomActivity.class);
+                    go.putExtra("userId",userId);
                     startActivity(go);
                     finish();
                 })

@@ -8,7 +8,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Spinner;
-
+import com.example.myapp.models.Room;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.activity.EdgeToEdge;
 
@@ -24,27 +24,32 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
+import android.util.Log;
 public class CreateroomActivity extends AppCompatActivity {
 
     private Spinner spinnerRooms;
     private Button joinBtn, createBtn;
     private EditText newRoomEdit;
-    private ArrayAdapter<String> adapter;
-    private ArrayList<String> roomsList = new ArrayList<>();
+    private ArrayAdapter<Room> adapter;
+    private ArrayList<Room> roomsList = new ArrayList<>();
+
+    private int roomId;
+    private int userId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_createroom2);
-
+        Intent prevIntent = getIntent();
+        userId = prevIntent.getIntExtra("userId", 9999);
         spinnerRooms = findViewById(R.id.spinnerRooms);
         joinBtn      = findViewById(R.id.buttonJoinRoom);
         createBtn    = findViewById(R.id.buttonCreateRoom);
         newRoomEdit  = findViewById(R.id.editTextNewRoom);
 
         // 1) set up spinner adapter
+        spinnerRooms = findViewById(R.id.spinnerRooms); // replace with your actual spinner ID
         adapter = new ArrayAdapter<>(
                 this,
                 android.R.layout.simple_spinner_item,
@@ -58,9 +63,15 @@ public class CreateroomActivity extends AppCompatActivity {
 
         // 3) join selected room
         joinBtn.setOnClickListener(v -> {
-            String selectedRoom = (String) spinnerRooms.getSelectedItem();
+            Room selectedRoom = (Room) spinnerRooms.getSelectedItem();
+            String selectedRoomName = selectedRoom.getName();
+            int selectedRoomId = Integer.parseInt(selectedRoom.getId()); // Assuming ID is a stringified int
+            roomId = selectedRoomId;
+            Log.d("selectedRoomId",String.valueOf(roomId));
             Intent intent = new Intent(this, ChatroomActivity.class);
-            intent.putExtra("roomName", selectedRoom);
+            intent.putExtra("roomName", selectedRoomName);
+            intent.putExtra("roomId", roomId);
+            intent.putExtra("userId", userId);
             startActivity(intent);
         });
 
@@ -89,7 +100,7 @@ public class CreateroomActivity extends AppCompatActivity {
     }
 
     /** Synchronous GET to /getRooms */
-    private ArrayList<String> getRooms() {
+    private ArrayList<Room> getRooms() {
         try {
             URL url = new URL(getString(R.string.url_root) + "/getRooms");
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -106,10 +117,12 @@ public class CreateroomActivity extends AppCompatActivity {
             in.close();
 
             JSONArray arr = new JSONArray(resp.toString());
-            ArrayList<String> list = new ArrayList<>();
+            ArrayList<Room> list = new ArrayList<>();
             for (int i = 0; i < arr.length(); i++) {
                 JSONObject obj = arr.getJSONObject(i);
-                list.add(obj.getString("Room_Name"));
+                String name = obj.getString("Room_Name");
+                String id = obj.getString("Room_ID");  // <-- Make sure this key matches the JSON
+                list.add(new Room(id, name));
             }
             return list;
 
@@ -123,7 +136,7 @@ public class CreateroomActivity extends AppCompatActivity {
     private void fetchRoomsAsync(RoomCallback callback) {
         ExecutorService exe = Executors.newSingleThreadExecutor();
         exe.execute(() -> {
-            ArrayList<String> rooms = getRooms();
+            ArrayList<Room> rooms = getRooms();
             callback.onRoomsReceived(rooms);
         });
     }
@@ -157,6 +170,6 @@ public class CreateroomActivity extends AppCompatActivity {
 
     /** Simple callback interface */
     public interface RoomCallback {
-        void onRoomsReceived(ArrayList<String> rooms);
+        void onRoomsReceived(ArrayList<Room> rooms);
     }
 }
