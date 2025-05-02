@@ -15,12 +15,17 @@
         android:theme="@style/Theme.RumrApp"
         android:usesCleartextTraffic="true"
         tools:targetApi="31">
+
+
         <activity
             android:name=".CreateroomActivity"
+            android:screenOrientation="portrait"
             android:exported="false" />
-        <activity android:name=".ChatroomActivity" />
+        <activity android:name=".ChatroomActivity"
+            android:screenOrientation="portrait"/>
         <activity
             android:name=".MainActivity"
+            android:screenOrientation="portrait"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
